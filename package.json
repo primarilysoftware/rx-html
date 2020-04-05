@@ -1,0 +1,50 @@
+{
+  "name": "rx-html",
+  "version": "0.1.0",
+  "description": "RxJS + lit-html = rx-html",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/primarilysoftware/rx-html.git"
+  },
+  "keywords": [
+    "RxJs",
+    "lit-html",
+    "reactive",
+    "functional",
+    "SPA"
+  ],
+  "author": "Jon Guy",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/primarilysoftware/rx-html/issues"
+  },
+  "homepage": "https://github.com/primarilysoftware/rx-html#readme",
+  "devDependencies": {
+    "@babel/core": "^7.9.0",
+    "@babel/preset-env": "^7.9.0",
+    "@types/jest": "^25.1.5",
+    "@types/node": "^13.11.0",
+    "babel-jest": "^25.2.6",
+    "jest": "^25.2.6",
+    "typescript": "^3.8.3"
+  },
+  "dependencies": {
+    "@babel/preset-typescript": "^7.9.0",
+    "lit-html": "^1.2.1",
+    "rxjs": "^6.5.4"
+  },
+  "jest": {
+    "moduleFileExtensions": [ "ts", "js" ],
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.tsx?$",
+    "transformIgnorePatterns": [
+      "node_modules/(?!(lit-html)/)"
+    ],
+    "collectCoverage": true
+  }
+}
