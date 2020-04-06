@@ -3,7 +3,7 @@ import { map, distinctUntilChanged } from 'rxjs/operators'
 import { html as litHtml, TemplateResult } from 'lit-html';
 
 export type Selectable<T> = {
-  select(key: keyof T): State<T[keyof T]>
+  select<TKey extends keyof T>(key: TKey): State<T[TKey]>
 }
 
 export type Reducer<T> = (value: T) => T;
@@ -32,13 +32,13 @@ function makeItemsObservable(args: unknown[]): Observable<Observable<unknown>[]>
   return combineLatest(...args.map(item => makeObservable(item)));
 };
 
-function select<T>(state: Observable<T> & Reducable<T>, key: keyof T): State<T[keyof T]> {
+function select<T, TKey extends keyof T>(state: Observable<T> & Reducable<T>, key: TKey): State<T[TKey]> {
   const observable = state.pipe(
     map(val => val[key]),
     distinctUntilChanged()
   );
 
-  const reduceFunc = (reducer: Reducer<T[keyof T]>) => {
+  const reduceFunc = (reducer: Reducer<T[TKey]>) => {
     return state.reduce(value => {
       const nextValue = reducer(value[key]);
       if (nextValue !== value[key]) {
@@ -55,7 +55,7 @@ function select<T>(state: Observable<T> & Reducable<T>, key: keyof T): State<T[k
 
   const reducable = Object.assign(observable, { reduce: reduceFunc });
 
-  const selectFunc = (subKey: keyof T[keyof T]) => select(reducable, subKey);
+  const selectFunc = <TSubKey extends keyof T[TKey]>(subKey: TSubKey) => select<T[TKey], TSubKey>(reducable, subKey);
 
   return Object.assign(reducable, { select: selectFunc });
 }
@@ -82,7 +82,7 @@ export function createState<T>(initialValue: T): State<T> {
   )
 
   return Object.assign(reducable, {
-    select: (key: keyof T) => select(reducable, key)
+    select: <TKey extends keyof T>(key: TKey) => select(reducable, key)
   });
 }
 
@@ -99,7 +99,7 @@ function createItemState<T>(item: T, source: State<T[]>): State<T> {
   });
   
   const selectable = Object.assign(reducable, {
-    select: (key: keyof T) => select(reducable, key)
+    select: <TKey extends keyof T>(key: TKey) => select(reducable, key)
   });
 
   return selectable;

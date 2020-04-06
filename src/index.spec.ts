@@ -311,5 +311,45 @@ describe('mapItems', () => {
     expect(observedValues.length).toBe(2);
     expect(observedValues[0][0]).toBe(1);
     expect(observedValues[1][0]).toBe(2);
-  })
+  });
+
+  it('should make individual items selectable', () => {
+    const itemsState = createState([ 
+      { value: 1 },
+      { value: 2 },
+      { value: 3 }
+    ]);
+
+    const itemStates: State<{ value: number }>[] = [];
+    mapItems(itemsState, itemState => itemStates.push(itemState))
+      .pipe(take(1))
+      .subscribe(() => {
+        // just want to force the side effect of pushing itemStates into array
+      });
+
+    const observedValues = [];
+    itemStates[0].select("value").subscribe(val => {
+      observedValues.push(val);
+    });
+
+    expect(observedValues.length).toBe(1);
+    expect(observedValues[0]).toBe(1);
+  });
+
+  it('should not send value returned from reducer to observers if it value has not changed', () => {
+    const itemsState = createState([ 1, 2, 3 ]);
+    const itemStates: State<number>[] = [];
+    mapItems(itemsState, itemState => itemStates.push(itemState))
+      .pipe(take(1))
+      .subscribe(() => {
+        // just want to force the side effect of pushing itemStates into array
+      });
+
+    const observedValues = [];
+    itemsState.subscribe(val => observedValues.push(val));
+
+    itemStates[0].reduce(current => current);
+
+    expect(observedValues.length).toBe(1);
+  });
 });
