@@ -1,5 +1,5 @@
 import { Subject, isObservable } from "rxjs";
-import { html, createState } from "./index"
+import { html, createState, mapItems, State } from "./index"
 import { take, skip } from "rxjs/operators";
 
 describe('html', () => {
@@ -291,4 +291,25 @@ describe('createState', () => {
       expect(observedValues[0]).toBe('target-initial');
     });
   });
+});
+
+describe('mapItems', () => {
+  it('should make individual items reducable', () => {
+    const itemsState = createState([ 1, 2, 3 ]);
+    const itemStates: State<number>[] = [];
+    mapItems(itemsState, itemState => itemStates.push(itemState))
+      .pipe(take(1))
+      .subscribe(() => {
+        // just want to force the side effect of pushing itemStates into array
+      });
+
+    const observedValues = [];
+    itemsState.subscribe(val => observedValues.push(val));
+
+    itemStates[0].reduce(current => current + 1);
+
+    expect(observedValues.length).toBe(2);
+    expect(observedValues[0][0]).toBe(1);
+    expect(observedValues[1][0]).toBe(2);
+  })
 });

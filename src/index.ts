@@ -85,3 +85,28 @@ export function createState<T>(initialValue: T): State<T> {
     select: (key: keyof T) => select(reducable, key)
   });
 }
+
+function createItemState<T>(item: T, source: State<T[]>): State<T> {
+  const reducable = Object.assign(of(item), {
+    reduce: (reducer: Reducer<T>) => {
+      const nextValue = reducer(item);
+      if (nextValue === item) {
+        return;
+      }
+
+      source.reduce(items => items.map(x => x === item ? nextValue : x));
+    }
+  });
+  
+  const selectable = Object.assign(reducable, {
+    select: (key: keyof T) => select(reducable, key)
+  });
+
+  return selectable;
+}
+
+export function mapItems<T, U>(itemsState: State<T[]>, mapping: (itemState: State<T>, index: number) => U): Observable<U[]> {
+  return itemsState.pipe(
+    map(items => items.map((item, index) => mapping(createItemState(item, itemsState), index)))
+  );
+};
