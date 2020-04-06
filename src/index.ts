@@ -1,5 +1,5 @@
 import { Observable, of, isObservable, combineLatest, BehaviorSubject } from 'rxjs';
-import { map, distinctUntilChanged } from 'rxjs/operators'
+import { map, distinctUntilChanged, switchMap } from 'rxjs/operators'
 import { html as litHtml, TemplateResult } from 'lit-html';
 
 export type Selectable<T> = {
@@ -14,7 +14,7 @@ export type Reducable<T> = {
 
 export type State<T> = Observable<T> & Reducable<T> & Selectable<T>
 
-function makeObservable(arg: unknown): Observable<unknown> {
+function makeObservable<T>(arg: T): Observable<unknown> {
   if (isObservable(arg)) {
     return arg;
   } else if (Array.isArray(arg)) {
@@ -24,7 +24,7 @@ function makeObservable(arg: unknown): Observable<unknown> {
   }
 };
 
-function makeItemsObservable(args: unknown[]): Observable<Observable<unknown>[]> {
+function makeItemsObservable<T>(args: T[]): Observable<Observable<T>[]> {
   if (!args || args.length === 0) {
     return of([]);
   }
@@ -105,8 +105,13 @@ function createItemState<T>(item: T, source: State<T[]>): State<T> {
   return selectable;
 }
 
-export function mapItems<T, U>(itemsState: State<T[]>, mapping: (itemState: State<T>, index: number) => U): Observable<U[]> {
-  return itemsState.pipe(
-    map(items => items.map((item, index) => mapping(createItemState(item, itemsState), index)))
+export function mapItems<T, U>(itemsState: State<T[]>, mapping: (itemState: State<T>, index: number) => U): Observable<Observable<U>[]> {
+  const out = itemsState.pipe(
+    switchMap(items => {
+      const mappedItems = items.map((item, index) => mapping(createItemState(item, itemsState), index));
+      return makeItemsObservable(mappedItems);
+    })
   );
+
+  return out;
 };
