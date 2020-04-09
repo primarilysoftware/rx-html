@@ -32,29 +32,30 @@ export type Reducable<T> = {
   reduce: (reducer: Reducer<T>) => Promise<T>
 }
 
+export type ReduceHandler<T> = (current: T, reducer: Reducer<T>) => T | Promise<T>
+
 export type Selectable<T> = {
   select: <TKey extends keyof T>(key: TKey) => State<T[TKey]>
 }
 
 export type State<T> = Observable<T> & Reducable<T> & Selectable<T>
 
-export function createState<T>(initialValue: T, reducer?: Reducer<T>) {
+export function createState<T>(initialValue: T, reduceHandler?: ReduceHandler<T>) {
   const subject = new BehaviorSubject(initialValue);
 
   const reducable = Object.assign(subject, {
-    reduce: (red: Reducer<T>) => {
-      const nextValueOrPromise = red(subject.value);
+    reduce: (reducer: Reducer<T>) => {
+      const nextValueOrPromise = reduceHandler
+        ? reduceHandler(subject.value, reducer)
+        : reducer(subject.value);
 
       return Promise.resolve(nextValueOrPromise)
         .then(nextValue => {
           if (nextValue === subject.value) {
             return subject.value;
           } else {
-            return Promise.resolve(reducer ? reducer(nextValue) : nextValue)
-              .then(reducedValue => {
-                subject.next(reducedValue);
-                return reducedValue;
-              })
+            subject.next(nextValue);
+            return nextValue;
           }
         });
     }
@@ -97,50 +98,20 @@ export function select<T, TKey extends keyof T>(source: Observable<T> & Reducabl
   return selectable;
 }
 
-function createItemState<T>(item: T, source: State<T[]>): State<T> {
-  const reducable = Object.assign(of(item), {
-    // reduce: (reducer: Reducer<T>) => {
-    //   const nextValue = reducer(item);
-    //   if (nextValue === item) {
-    //     return;
-    //   }
-
-    //   source.reduce(items => items.map(x => x === item ? nextValue : x));
-    // }
-    reduce: (reducer: Reducer<T>) =>
-      source.reduce(items => {
-        const nextValueOrPromise = reducer(item);
-
-        return Promise.resolve(nextValueOrPromise)
-          .then(nextValue => {
-            if (nextValue === item) {
-              return items;
-            } else {
-              return source.reduce(items => items.map(x => x === item ? nextValue : x))
-            }
-          })
-      }).then(_ => item)
-  });
-  
-  const selectable = Object.assign(reducable, {
-    select: <TKey extends keyof T>(key: TKey) => select(reducable, key)
-  });
-
-  return selectable;
-}
-
 export function mapItems<T, U>(itemsState: State<T[]>, mapping: (itemState: State<T>, index: number) => U): Observable<Observable<U>[]> {
   const out = itemsState.pipe(
     switchMap(items => {
       const itemStates = items.map((item, index) => 
-        createState(item, reduced => {
-          if (reduced === item) {
-            return item;
-          } else {
-            return itemsState.reduce(currentItems => currentItems.map(x => x === item ? reduced : x))
-              .then(_ => reduced);
-          }
-        }));
+        createState(item, (current, reducer) =>
+          Promise.resolve(reducer(current))
+            .then(next => {
+              if (next === item) {
+                return item;
+              } else {
+                return itemsState.reduce(currentItems => currentItems.map(x => x === item ? next : x))
+                  .then(_ => next);
+              }
+            })));
 
       const mappedItems = itemStates.map((item, index) => mapping(item, index));
 
@@ -149,12 +120,4 @@ export function mapItems<T, U>(itemsState: State<T[]>, mapping: (itemState: Stat
   );
 
   return out;
-  // const out = itemsState.pipe(
-  //   switchMap(items => {
-  //     const mappedItems = items.map((item, index) => mapping(createItemState(item, itemsState), index));
-  //     return makeItemsObservable(mappedItems);
-  //   })
-  // );
-
-  // return out;
 };
