@@ -94,25 +94,25 @@ describe('createState', () => {
   });
 
   describe('reduce', () => {
-    it('reducer function should receive current value as parameter when called', () => {
+    it('reducer function should receive current value as parameter when called', async () => {
       const state = createState(1);
-      state.reduce(val => {
+      await state.reduce(val => {
         expect(val).toBe(1);
         return val + 1;
       });
 
-      state.reduce(val => {
+      await state.reduce(val => {
         expect(val).toBe(2);
         return val + 1;
       });
     });
 
-    it('should send value returned from reducer to observers', () => {
+    it('should send value returned from reducer to observers', async () => {
       const state = createState(1);
       const observedValues = [];
 
       state.subscribe(val => observedValues.push(val));
-      state.reduce(_ => 2);
+      await state.reduce(_ => 2);
 
       expect(observedValues.length).toBe(2);
       expect(observedValues[0]).toBe(1); //initial state
@@ -163,7 +163,7 @@ describe('createState', () => {
       expect(observedValues[0]).toBe('value1-initial');
     });
 
-    it('should send updated value to observers when selected value is reduced', () => {
+    it('should send updated value to observers when selected value is reduced', async () => {
       const state = createState({
         value1: 'value1-initial',
         value2: 'value2-initial'
@@ -174,7 +174,7 @@ describe('createState', () => {
 
       value2State.subscribe(val => observedValues.push(val));
 
-      value2State.reduce(_ => 'value2-updated');
+      await value2State.reduce(_ => 'value2-updated');
 
       expect(observedValues.length).toBe(2);
       expect(observedValues[0]).toBe('value2-initial');
@@ -198,7 +198,7 @@ describe('createState', () => {
       expect(observedValues[0]).toBe('value1-initial');
     });
 
-    it('should send updated value to selected state observers when parent state is reduced', () => {
+    it('should send updated value to selected state observers when parent state is reduced', async () => {
       const state = createState({
         value1: 'value1-initial',
         value2: 'value2-initial'
@@ -208,7 +208,7 @@ describe('createState', () => {
       const observedValues = [];
       value2State.subscribe(val => observedValues.push(val));
 
-      state.reduce(val => ({
+      await state.reduce(val => ({
         ...val,
         value2: 'value2-updated'
       }));
@@ -218,7 +218,7 @@ describe('createState', () => {
       expect(observedValues[1]).toBe('value2-updated');
     });
 
-    it('should send updated value to parent state observers when selected state is reduced', () => {
+    it('should send updated value to parent state observers when selected state is reduced', async () => {
       const state = createState({
         value1: 'value1-initial',
         value2: 'value2-initial'
@@ -228,7 +228,7 @@ describe('createState', () => {
       const observedValues = [];
       state.subscribe(val => observedValues.push(val));
 
-      value2State.reduce(_ => 'value2-updated');
+      await value2State.reduce(_ => 'value2-updated');
 
       expect(observedValues.length).toBe(2);
       expect(observedValues[0].value2).toBe('value2-initial');
@@ -251,7 +251,7 @@ describe('createState', () => {
       expect(observedValues[0]).toBe('test');
     });
 
-    it('reducing nested selected state should send update to parent observers', () => {
+    it('reducing nested selected state should send update to parent observers', async () => {
       const parentState = createState({
         child: {
           grandChild: 'grand-child'
@@ -264,7 +264,7 @@ describe('createState', () => {
 
       parentState.subscribe(val => observedValues.push(val));
 
-      grandChildState.reduce(_ => 'updated');
+      await grandChildState.reduce(_ => 'updated');
 
       expect(observedValues.length).toBe(2);
       expect(observedValues[0].child.grandChild).toBe('grand-child');
@@ -294,7 +294,7 @@ describe('createState', () => {
 });
 
 describe('mapItems', () => {
-  it('should make individual items reducable', () => {
+  it('should make individual items reducable', async () => {
     const itemsState = createState([ 1, 2, 3 ]);
     const itemStates: State<number>[] = [];
     mapItems(itemsState, itemState => itemStates.push(itemState))
@@ -306,7 +306,7 @@ describe('mapItems', () => {
     const observedValues = [];
     itemsState.subscribe(val => observedValues.push(val));
 
-    itemStates[0].reduce(current => current + 1);
+    await itemStates[0].reduce(current => current + 1);
 
     expect(observedValues.length).toBe(2);
     expect(observedValues[0][0]).toBe(1);
