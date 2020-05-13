@@ -32,6 +32,7 @@
     "@types/node": "^13.11.0",
     "babel-jest": "^25.2.6",
     "jest": "^25.2.6",
+    "subsink": "^1.0.1",
     "typescript": "^3.8.3"
   },
   "dependencies": {
@@ -40,7 +41,10 @@
     "rxjs": "^6.5.4"
   },
   "jest": {
-    "moduleFileExtensions": [ "ts", "js" ],
+    "moduleFileExtensions": [
+      "ts",
+      "js"
+    ],
     "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.tsx?$",
     "transformIgnorePatterns": [
       "node_modules/(?!(lit-html)/)"
